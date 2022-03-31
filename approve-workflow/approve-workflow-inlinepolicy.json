@@ -1,0 +1,18 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Resource": "arn:aws:iam::XXXXXXXXXXXX:role/[ROLE_NAME]",
+            "Effect": "Allow",
+            "Condition": {
+                "DateLessThan": {
+                    "aws:CurrentTime": "YYYY-MM-DDThh:mm:ss+09:00"
+                },
+                "DateGreaterThan": {
+                    "aws:CurrentTime": "YYYY-MM-DDThh:mm:ss+09:00Z"
+                }
+            }
+        }
+    ]
+}

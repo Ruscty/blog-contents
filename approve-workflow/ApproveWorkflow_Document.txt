@@ -1,0 +1,43 @@
+description: Temporary Privilege Workflow
+schemaVersion: '0.3'
+parameters:
+  IamUserName:
+    type: String
+    description: (Required) IAM User name for applicant
+    default: request-user
+  IamRoleArn:
+    type: String
+    description: (Required) ARN of Privilege IAM Role
+  SnsTopicArn:
+    type: String
+    description: (Required) SNS Topic ARN for Approvers
+  Approvers:
+    type: StringList
+    description: (Required) IAM user or user arn of approvers
+    default: [approve-user]
+  StartTime:
+    type: String
+    description: (Required) Start Time that applicant can invoke AssumeRole
+    default: 'YYYY-MM-DDThh:mm:ss+09:00'
+  EndTime:
+    type: String
+    description: (Required) End Time that applicant can invoke AssumeRole
+    default: 'YYYY-MM-DDThh:mm:ss+09:00'
+mainSteps:
+  - action: 'aws:approve'
+    name: approve
+    inputs:
+      NotificationArn: '{{SnsTopicArn}}'
+      Message: Do you approve?
+      Approvers: '{{Approvers}}'
+      MinRequiredApprovals: 1
+    onFailure: Abort
+  - action: 'aws:executeAwsApi'
+    name: PutInlinepolicy
+    inputs:
+      Service: iam
+      Api: PutUserPolicy
+      UserName: '{{IamUserName}}'
+      PolicyName: AllowAssumePrivilegeRole
+      PolicyDocument: '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"sts:AssumeRole","Resource":"{{IamRoleArn}}","Condition":{"DateGreaterThan":{"aws:CurrentTime":"{{StartTime}}"},"DateLessThan":{"aws:CurrentTime":"{{EndTime}}"}}}]}'
+    isEnd: true
