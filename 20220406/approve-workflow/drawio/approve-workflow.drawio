@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="1wn15DY64OFITk2HPa6F" name="ページ1">
-        <mxGraphModel dx="870" dy="509" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
+        <mxGraphModel dx="1074" dy="647" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -30,12 +30,6 @@
                 </mxCell>
                 <mxCell id="12" value="リクエスト&lt;br&gt;権限" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#BF0816;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.permissions;" parent="1" vertex="1">
                     <mxGeometry x="84.88999999999999" y="220" width="30.21" height="38" as="geometry"/>
-                </mxCell>
-                <mxCell id="13" value="" style="endArrow=classic;html=1;" parent="1" edge="1">
-                    <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="390" y="430" as="sourcePoint"/>
-                        <mxPoint x="440" y="380" as="targetPoint"/>
-                    </mxGeometry>
                 </mxCell>
                 <mxCell id="15" value="&lt;span style=&quot;background-color: rgb(255 , 255 , 255)&quot;&gt;①許可申請&lt;/span&gt;" style="endArrow=classic;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;strokeColor=#000000;labelBackgroundColor=none;fontColor=#000000;verticalAlign=bottom;align=center;" parent="1" source="6" target="10" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
@@ -79,23 +73,26 @@
                         <mxPoint x="390" y="170" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="28" value="" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#BF0816;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.role;" vertex="1" parent="1">
+                <mxCell id="28" value="" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#BF0816;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.role;" parent="1" vertex="1">
                     <mxGeometry x="169.99999999999997" y="247.5" width="53.18" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="30" value="⑥スイッチ" style="endArrow=classic;html=1;strokeColor=#000000;labelBackgroundColor=none;fontColor=#000000;verticalAlign=bottom;align=left;" edge="1" parent="1" source="6" target="28">
+                <mxCell id="30" value="⑥スイッチ" style="endArrow=classic;html=1;strokeColor=#000000;labelBackgroundColor=none;fontColor=#000000;verticalAlign=bottom;align=left;" parent="1" source="6" target="28" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="249.99999999999977" y="169.60000000000002" as="sourcePoint"/>
                         <mxPoint x="339.9999999999998" y="170" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="31" value="許可された&lt;br&gt;サービス" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fa6800;fontColor=#000000;strokeColor=#C73500;" vertex="1" parent="1">
+                <mxCell id="31" value="IAMロールで&lt;br&gt;許可された&lt;br&gt;サービス" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fa6800;fontColor=#000000;strokeColor=#C73500;" parent="1" vertex="1">
                     <mxGeometry x="280" y="320" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="32" value="⑦アクセス" style="endArrow=classic;html=1;strokeColor=#000000;labelBackgroundColor=none;fontColor=#000000;verticalAlign=bottom;align=left;entryX=0;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="28" target="31">
+                <mxCell id="32" value="⑦アクセス" style="endArrow=classic;html=1;strokeColor=#000000;labelBackgroundColor=none;fontColor=#000000;verticalAlign=bottom;align=left;entryX=0;entryY=0;entryDx=0;entryDy=0;" parent="1" source="28" target="31" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="138.270243902439" y="200" as="sourcePoint"/>
                         <mxPoint x="192.45487804878053" y="257.5" as="targetPoint"/>
                     </mxGeometry>
+                </mxCell>
+                <mxCell id="33" value="スイッチ&lt;br&gt;権限" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#BF0816;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.permissions;" vertex="1" parent="1">
+                    <mxGeometry x="249.79000000000002" y="182" width="30.21" height="38" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
