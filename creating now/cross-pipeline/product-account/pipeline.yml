@@ -1,0 +1,212 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Step 4, Environment and Pipeline (in Production Account)
+# ------------------------------------------------------------#
+# Parameters
+# ------------------------------------------------------------#
+Parameters:
+  NameTagPrefix:
+    Type: String
+    Default: system
+    Description: Prefix of Name tags.
+  RepositoryAccountId:
+    Type: String
+    Description: Prefix of RepositoryAccountId tag.
+  ServiceName:
+    Type: String
+    Default: myapp
+    Description: Prefix of Service tags.
+  CodeCommitRepositoryName:
+    Description: Repository Account CodeCommit Repository Name
+    Type: String
+  BranchName:
+    Type: String
+    Default: master
+  ArtifactBucketName:
+    Description: Production Account S3 Bucket Name for Artifact
+    Type: String
+  CmkArn:
+    Description: Production Account CMK ARN
+    Type: String
+  CodePipelineRoleArn:
+    Description: Production Account CodePipeline Service Role ARN
+    Type: String
+  CodeCommitRoleArn:
+    Description: Repository Account CodeCommit Action Role ARN
+    Type: String
+  CodeBuildRoleArn:
+    Description: Repository Account CodeBuild Action Role ARN
+    Type: String
+  BuildSpecFileName:
+    Description: input your buildspec file name
+    Type: String
+    Default: my-buildspec.yml
+# ------------------------------------------------------------#
+# Parameters
+# ------------------------------------------------------------#
+Resources:
+  # EventBus
+  SampleEventBusPolicy:
+    Type: AWS::Events::EventBusPolicy
+    Properties:
+      StatementId: MyStatement
+      Statement:
+        Effect: Allow
+        Principal:
+          AWS: !Sub arn:aws:iam::${RepositoryAccountId}:root
+        Action: events:PutEvents
+        Resource: !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/default
+
+  # CodeWatchEventを実行できるIAMRole
+  CloudwatchEventRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${NameTagPrefix}-${ServiceName}-CloudWatchEventRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: CloudWatchEventsPipelineExecution
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: codepipeline:StartPipelineExecution
+                Resource: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}
+
+  # CloudWatchEventの実行ルール
+  AmazonCloudWatchEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - aws.codecommit
+        detail-type:
+          - CodeCommit Repository State Change
+        resources:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:codecommit:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref RepositoryAccountId
+                - ':'
+                - !Ref CodeCommitRepositoryName
+        detail:
+          event:
+            - referenceCreated
+            - referenceUpdated
+          referenceType:
+            - branch
+          referenceName:
+            - !Ref BranchName
+      Targets:
+        - Arn: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}
+          RoleArn: !GetAtt CloudwatchEventRole.Arn
+          Id: codepipeline-AppPipeline
+
+  # CodeBuild
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      ServiceRole: !Ref CodeBuildRoleArn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Ref BuildSpecFileName
+      Environment:
+        PrivilegedMode: true
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+      Name: !Ref AWS::StackName
+  # ------------------------------------------------------------#
+  # CodePipeline
+  # ------------------------------------------------------------#
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !Ref CodePipelineRoleArn
+      Name: !Sub ${NameTagPrefix}-${ServiceName}-pipeline
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucketName
+        EncryptionKey:
+          Id: !Ref CmkArn
+          Type: KMS
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: '1'
+                Provider: CodeCommit
+              Configuration:
+                RepositoryName: !Ref CodeCommitRepositoryName
+                PollForSourceChanges: false
+                BranchName: !Ref BranchName
+              RunOrder: 1
+              OutputArtifacts:
+                - Name: App
+              RoleArn: !Ref CodeCommitRoleArn
+
+        - Name: Build #terraform plan
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              RunOrder: 1
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: BuildOutput
+
+        # - Name: Approval
+        #   Actions:
+        #     - Name: Manual_Approval
+        #       ActionTypeId:
+        #         Category: Approval
+        #         Owner: AWS
+        #         Version: '1'
+        #         Provider: Manual
+        #       Configuration:
+        #         CustomData: !Sub '${ServiceName} will be updated. Do you want to deploy it?'
+        #         NotificationArn: arn:aws:sns:ap-northeast-1:{AWS::AccountId}:${SnsTopicName}
+        # - Name: Build #terraform apply
+        #   Actions:
+        #     - Name: Build
+        #       ActionTypeId:
+        #         Category: Build
+        #         Owner: AWS
+        #         Version: '1'
+        #         Provider: CodeBuild
+        #       Configuration:
+        #         ProjectName: !Ref CodeBuildProject
+        #       RunOrder: 1
+        #       InputArtifacts:
+        #         - Name: App
+        #       OutputArtifacts:
+        #         - Name: BuildOutput
+# ------------------------------------------------------------#
+# Outputs
+# ------------------------------------------------------------#
+Outputs:
+  PipelinelogicalID:
+    Description: logical ID.
+    Value: !Ref Pipeline

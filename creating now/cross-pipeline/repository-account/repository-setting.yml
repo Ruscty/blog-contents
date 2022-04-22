@@ -1,0 +1,144 @@
+# 用意されるリソース
+# CodeCommit
+# EventBrdge
+# 
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Step 2, CodeCommit (in Repository Account)
+# ------------------------------------------------------------#
+# Parameters
+# ------------------------------------------------------------#
+Parameters:
+  NameTagPrefix:
+    Type: String
+    Default: system
+    Description: Prefix of Name tags.
+  ProductionAccountId:
+    Description: Production Account ID
+    MaxLength: 12
+    MinLength: 12
+    Type: String
+  S3BucketArn:
+    Description: Production Account S3 Bucket ARN for Artifact (Created by 01-requirement.yml)
+    Type: String
+  CmkArn:
+    Description: Production Account CMK ARN (Created by 01-requirement.yml)
+    Type: String
+  CodeCommitRepositoryArn:
+    Description: CodeCommit Repository Arn
+    Type: String
+  CodeCommitRepositoryName:
+    Description: Repository Account CodeCommit Repository Name (Created by 02-codecommit.yml)
+    Type: String
+  BranchName:
+    Type: String
+    Default: master
+# ------------------------------------------------------------#
+# Resources
+# ------------------------------------------------------------#
+Resources:
+  # CodeWatchEventを実行できるIAMRole
+  CloudwatchEventRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${NameTagPrefix}-CloudWatchEventRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: CloudWatchEventsBus
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: events:PutEvents
+                Resource: !Sub arn:aws:events:${AWS::Region}:${ProductionAccountId}:event-bus/default
+
+  # CloudWatchEventの実行ルール
+  AmazonCloudWatchEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - aws.codecommit
+        detail-type:
+          - CodeCommit Repository State Change
+        resources:
+          - Fn::Join:
+              - ''
+              - - 'arn:aws:codecommit:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - ':'
+                - !Ref CodeCommitRepositoryName
+        detail:
+          event:
+            - referenceCreated
+            - referenceUpdated
+          referenceType:
+            - branch
+          referenceName:
+            - !Ref BranchName
+      Targets:
+        - Arn: !Sub arn:aws:events:${AWS::Region}:${ProductionAccountId}:event-bus/default
+          RoleArn: !GetAtt CloudwatchEventRole.Arn
+          Id: codepipeline-AppPipeline
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Sub arn:aws:iam::${ProductionAccountId}:root
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: source
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                Resource:
+                  - !Sub ${S3BucketArn}/*
+              - Effect: Allow
+                Action:
+                  - kms:DescribeKey
+                  - kms:GenerateDataKey*
+                  - kms:Encrypt
+                  - kms:ReEncrypt*
+                  - kms:Decrypt
+                Resource:
+                  - !Ref CmkArn
+              - Effect: Allow
+                Action:
+                  - codecommit:GetBranch
+                  - codecommit:GetCommit
+                  - codecommit:UploadArchive
+                  - codecommit:GetUploadArchiveStatus
+                  - codecommit:CancelUploadArchive
+                Resource:
+                  - !Ref CodeCommitRepositoryArn
+# ------------------------------------------------------------#
+# Outputs
+# ------------------------------------------------------------#
+Outputs:
+  Role:
+    Value: !GetAtt Role.Arn
+    Description: CodeCommitRole Arn
+    Export:
+      Name: CodeCommitRoleArn
